@@ -1,7 +1,7 @@
 {
   "name": "movies-explorer-api",
   "version": "1.0.0",
-  "description": "Backend for diploma",
+  "description": "Backend for diploma yandex.prakrtikum",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
