@@ -12,7 +12,7 @@
   "author": "Zaripova Alisa",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/apzaripova/movies-explorer-api"
+    "url": "https://github.com/apzaripova/movies-explorer-api.git"
   },
   "homepage": "https://github.com/apzaripova/movies-explorer-api#readme",
   "devDependencies": {
