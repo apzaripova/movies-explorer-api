@@ -63,7 +63,7 @@ exports.deleteMovie = (req, res, next) => {
     .then((movie) => {
       if (movie.owner.toString() !== id) {
         throw new UnauthorizedError(
-          'Это не ваш фильм. Вы не можете удалять чужие',
+          'Вы не можете удалять чужие фильмы',
         );
       }
 

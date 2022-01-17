@@ -100,7 +100,7 @@ module.exports.updateUserProfile = (req, res, next) => {
       if (userProfile) {
         res.send(userProfile);
       } else {
-        throw new NotFoundError('Пользователь не найден');
+        throw new NotFoundError('Такой пользователь не найден');
       }
     })
     .catch((err) => {
