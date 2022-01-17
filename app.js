@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const { errors } = require('celebrate');
+const Router = require('./routes/index');
 const moviesRoutes = require('./routes/movies');
 const usersRoutes = require('./routes/users');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
@@ -19,6 +20,7 @@ mongoose.connect('mongodb://localhost:27017/bitfilmsdb', {
 
 app.use(requestLogger);
 
+app.use(Router);
 app.use('/', moviesRoutes);
 app.use('/', usersRoutes);
 
