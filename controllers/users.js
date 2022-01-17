@@ -8,10 +8,7 @@ const User = require('../models/user');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
-const SALT_ROUNDS = 10;
-const MONGO_DUPLICATE_ERROR_CODE = 11000;
-
-exports.createUser = (req, res, next) => {
+module.exports.createUser = (req, res, next) => {
   const { email, password, name } = req.body;
 
   if (!email || !password || !name) {
@@ -19,22 +16,22 @@ exports.createUser = (req, res, next) => {
   }
 
   bcrypt
-    .hash(password, SALT_ROUNDS)
+    .hash(password, 10)
     .then((hash) => User.create({ email, name, password: hash }))
-    .then((createUser) => res.send({
-      _id: createUser._id,
-      name: createUser.name,
-      email: createUser.email,
+    .then((user) => res.send({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
     }))
     .catch((err) => {
-      if (err.code === MONGO_DUPLICATE_ERROR_CODE) {
+      if (err.code === 110000) {
         next(new ConflictError('Пользователь уже существует'));
       }
       next(err);
     });
 };
 
-exports.onLogin = (req, res, next) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -43,20 +40,20 @@ exports.onLogin = (req, res, next) => {
 
   User.findOne({ email })
     .select('+password')
-    .then((userIsExist) => {
-      if (!userIsExist) {
+    .then((user) => {
+      if (!user) {
         throw new UnauthorizedError('Неправильные почта или пароль');
       }
 
       bcrypt
-        .compare(password, userIsExist.password)
+        .compare(password, user.password)
         .then((matched) => {
           if (!matched) {
             throw new UnauthorizedError('Неправильные почта или пароль');
           }
 
           const token = jwt.sign(
-            { _id: userIsExist._id },
+            { _id: user._id },
             NODE_ENV === 'production' ? JWT_SECRET : 'extremly_secret_key',
             {
               expiresIn: '7d',
@@ -68,44 +65,26 @@ exports.onLogin = (req, res, next) => {
               httpOnly: true,
               sameSite: true,
             })
-            .send({ _id: userIsExist._id });
+            .send({ _id: user._id });
         })
         .catch(next);
     })
     .catch(next);
 };
 
-exports.onSignOut = (req, res, next) => {
-  const token = req.cookies.userToken;
-
-  if (!token) {
-    throw new UnauthorizedError(
-      'Токена нет в куках. Сначала надо залогиниться',
-    );
-  }
-
-  try {
-    res
-      .clearCookie('userToken', {
-        httpOnly: true,
-        sameSite: true,
-      })
-      .status(200)
-      .send({ message: 'Токен удален из куков' });
-  } catch (err) {
-    next(err);
-  }
+module.exports.logout = (req, res) => {
+  res.clearCookie('jwt').status(200).send({ message: 'Пользователь успешно деавторизован' });
 };
 
-exports.getUserProfile = (req, res, next) => {
-  const userId = req.user._id;
+module.exports.getUser = (req, res, next) => {
+  const id = req.user._id;
 
-  User.findById(userId)
+  User.findById(id)
     .then((user) => res.send(user))
     .catch(next);
 };
 
-exports.updateUserProfile = (req, res, next) => {
+module.exports.updateUserProfile = (req, res, next) => {
   const { email, name } = req.body;
 
   User.findByIdAndUpdate(

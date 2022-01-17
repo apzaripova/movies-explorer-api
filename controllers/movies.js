@@ -52,23 +52,23 @@ exports.createMovie = (req, res, next) => {
     });
 };
 
-exports.removeMovie = (req, res, next) => {
+exports.deleteMovie = (req, res, next) => {
   const { movieId } = req.params;
-  const userId = req.user._id;
+  const id = req.user._id;
 
   Movie.findById(movieId)
     .orFail(() => {
       throw new NotFoundError('Фильм не найден');
     })
     .then((movie) => {
-      if (movie.owner.toString() !== userId) {
+      if (movie.owner.toString() !== id) {
         throw new UnauthorizedError(
           'Это не ваш фильм. Вы не можете удалять чужие',
         );
       }
 
       Movie.findByIdAndRemove(movieId)
-        .then((movieToRemove) => res.send(movieToRemove))
+        .then((movieToDelete) => res.send(movieToDelete))
         .catch(next);
     })
     .catch((err) => {

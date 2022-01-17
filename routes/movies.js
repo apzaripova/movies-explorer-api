@@ -1,7 +1,7 @@
 const express = require('express');
 const { celebrate, Joi } = require('celebrate');
 const validator = require('validator');
-const { createMovie, removeMovie, getAllMovies } = require('../controllers/movies');
+const { createMovie, deleteMovie, getAllMovies } = require('../controllers/movies');
 
 const moviesRoutes = express.Router();
 
@@ -35,6 +35,6 @@ moviesRoutes.delete('/:movieId', celebrate({
   params: Joi.object().keys({
     movieId: Joi.string().hex().length(24),
   }),
-}), removeMovie);
+}), deleteMovie);
 
 exports.moviesRoutes = moviesRoutes;

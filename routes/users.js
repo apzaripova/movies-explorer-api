@@ -1,10 +1,10 @@
 const express = require('express');
 const { celebrate, Joi } = require('celebrate');
-const { getUserProfile, updateUserProfile } = require('../controllers/users');
+const { getUser, updateUserProfile } = require('../controllers/users');
 
 const usersRoutes = express.Router();
 
-usersRoutes.get('/me', getUserProfile);
+usersRoutes.get('/me', getUser);
 usersRoutes.patch('/me', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
