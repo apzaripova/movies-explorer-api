@@ -6,7 +6,7 @@ const moviesRouter = require('./movies');
 
 const NotFoundError = require('../errors/NotFoundError');
 
-const { createUser, login, logOut } = require('../controllers/users');
+const { createUser, login, logout } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 
 Router.post('/signup', celebrate({
@@ -24,7 +24,7 @@ Router.post('/signin', celebrate({
   }),
 }), login);
 
-Router.delete('/signout', logOut);
+Router.delete('/signout', logout);
 
 Router.use('/users', auth, usersRouter);
 Router.use('/movies', auth, moviesRouter);
