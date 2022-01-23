@@ -67,8 +67,8 @@ exports.deleteMovie = (req, res, next) => {
         );
       }
 
-      Movie.findByIdAndRemove(movieId)
-        .then((movieToDelete) => res.send(movieToDelete))
+      Movie.remove(movie)
+        .then(res.send({ message: movie }))
         .catch(next);
     })
     .catch((err) => {

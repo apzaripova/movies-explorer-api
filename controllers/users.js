@@ -11,10 +11,6 @@ const { NODE_ENV, JWT_SECRET } = process.env;
 module.exports.createUser = (req, res, next) => {
   const { email, password, name } = req.body;
 
-  if (!email || !password || !name) {
-    throw new BadRequestError('Все поля обязательны');
-  }
-
   bcrypt
     .hash(password, 10)
     .then((hash) => User.create({ email, name, password: hash }))
@@ -26,8 +22,9 @@ module.exports.createUser = (req, res, next) => {
     .catch((err) => {
       if (err.code === 110000) {
         next(new ConflictError('Пользователь уже существует'));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -103,9 +100,9 @@ module.exports.updateUserInfo = (req, res, next) => { // обновляем да
         .catch((err) => {
           if (err.name === 'ValidationError') {
             next(new BadRequestError('Переданы некорректные данные при обновлении пользователя'));
+          } else {
+            next(err);
           }
-
-          next(err);
         });
     })
     .catch(next);
