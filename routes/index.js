@@ -1,5 +1,4 @@
 const Router = require('express').Router();
-const { celebrate, Joi } = require('celebrate');
 
 const usersRouter = require('./users');
 const moviesRouter = require('./movies');
