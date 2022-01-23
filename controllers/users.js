@@ -84,29 +84,29 @@ module.exports.getUser = (req, res, next) => {
     .catch(next);
 };
 
-module.exports.updateUserProfile = (req, res, next) => {
-  const { email, name } = req.body;
+module.exports.updateUserInfo = (req, res, next) => { // обновляем данные текущего пользователя
+  const { name, email } = req.body;
+  const id = req.user._id;
 
-  User.findByIdAndUpdate(
-    req.user._id,
-    { email, name },
-    {
-      new: true,
-      runValidators: true,
-      upsert: false,
-    },
-  )
-    .then((userProfile) => {
-      if (userProfile) {
-        res.send(userProfile);
-      } else {
-        throw new NotFoundError('Такой пользователь не найден');
+  User.find({ email })
+    .then((data) => {
+      if (data.length !== 0) { // проверка, что такого имейла нет в базе
+        next(new ConflictError('Пользователь с такой почтой уже существует'));
       }
+
+      User.findByIdAndUpdate(id, { name, email }, {
+        runValidators: true,
+        new: true,
+      })
+        .orFail(new NotFoundError('Ресурс не найден'))
+        .then((user) => res.send(user))
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            next(new BadRequestError('Переданы некорректные данные при обновлении пользователя'));
+          }
+
+          next(err);
+        });
     })
-    .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      }
-      next(err);
-    });
+    .catch(next);
 };
