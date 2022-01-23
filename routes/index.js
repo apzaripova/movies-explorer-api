@@ -7,24 +7,14 @@ const moviesRouter = require('./movies');
 const NotFoundError = require('../errors/NotFoundError');
 
 const { createUser, login, logout } = require('../controllers/users');
+const { validateSignUp, validateSignIn } = require('../middlewares/validation');
 const auth = require('../middlewares/auth');
 
-Router.post('/signup', celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().min(2).max(30).required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().required(),
-  }),
-}), createUser);
+Router.post('/signup', auth, validateSignUp, createUser);
 
-Router.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().email().required(),
-    password: Joi.string().required(),
-  }),
-}), login);
+Router.post('/signin', auth, validateSignIn, login);
 
-Router.delete('/signout', logout);
+Router.delete('/signout', auth, logout);
 
 Router.use('/users', auth, usersRouter);
 Router.use('/movies', auth, moviesRouter);
