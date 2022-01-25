@@ -81,7 +81,7 @@ module.exports.getUser = (req, res, next) => {
     .catch(next);
 };
 
-module.exports.updateUserInfo = (req, res, next) => { // обновляем данные текущего пользователя
+module.exports.updateUserProfile = (req, res, next) => { // обновляем данные текущего пользователя
   const { name, email } = req.body;
   const id = req.user._id;
 
