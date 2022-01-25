@@ -9,9 +9,9 @@ const { createUser, login, logout } = require('../controllers/users');
 const { validateSignUp, validateSignIn } = require('../middlewares/validation');
 const auth = require('../middlewares/auth');
 
-Router.post('/signup', auth, validateSignUp, createUser);
+Router.post('/signup', validateSignUp, createUser);
 
-Router.post('/signin', auth, validateSignIn, login);
+Router.post('/signin', validateSignIn, login);
 
 Router.delete('/signout', auth, logout);
 
