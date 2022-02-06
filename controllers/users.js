@@ -31,42 +31,22 @@ module.exports.createUser = (req, res, next) => {
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    throw new BadRequestError('Не передан email или пароль');
-  }
-
-  User.findOne({ email })
-    .select('+password')
+  return User.findUserByCredentials(email, password)
     .then((user) => {
-      if (!user) {
-        throw new UnauthorizedError('Неправильные почта или пароль');
-      }
+      const token = jwt.sign(
+        { _id: user._id },
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+      );
 
-      bcrypt
-        .compare(password, user.password)
-        .then((matched) => {
-          if (!matched) {
-            throw new UnauthorizedError('Неправильные почта или пароль');
-          }
-
-          const token = jwt.sign(
-            { _id: user._id },
-            NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret-key',
-            {
-              expiresIn: '7d',
-            },
-          );
-          res
-            .cookie('userToken', token, {
-              maxAge: 360000000,
-              httpOnly: true,
-              sameSite: true,
-            })
-            .send({ _id: user._id });
-        })
-        .catch(next);
+      res.status(200).send({ token });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.statusCode === 401) {
+        next(new UnauthorizedError('Неправильные почта или пароль'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.logout = (req, res) => {
