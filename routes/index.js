@@ -12,7 +12,7 @@ Router.post('/signin', validateSignIn, login);
 
 Router.delete('/signout', auth, logout);
 
-Router.use('/', auth, usersRouter);
+Router.use('/users', auth, usersRouter);
 Router.use('/', auth, moviesRouter);
 
 Router.use('*', (req, res, next) => {
