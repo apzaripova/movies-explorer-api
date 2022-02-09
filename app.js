@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 const { errors } = require('celebrate');
 const Router = require('./routes/index');
@@ -12,9 +12,21 @@ const { errorHandler } = require('./middlewares/errorHandler');
 
 const { PORT = 3000 } = process.env;
 const app = express();
-app.use(cookieParser());
+
+const whiteList = ['http://movies-explorer.kinopoisk.nomoredomains.rocks',
+  'https://movies-explorer.kinopoisk.nomoredomains.rocks'];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (whiteList.indexOf(origin) !== -1) {
+      callback(null, true);
+    }
+  },
+  credentials: true,
+};
+
+app.use('*', cors(corsOptions));
 app.use(cors());
-app.options('*', cors());
 
 app.use(express.json());
 
@@ -23,6 +35,9 @@ mongoose.connect('mongodb://localhost:27017/moviesdb', {
   useCreateIndex: true,
   useFindAndModify: false,
 });
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(helmet());
 
