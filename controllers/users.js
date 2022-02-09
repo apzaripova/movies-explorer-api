@@ -1,6 +1,5 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 const ConflictError = require('../errors/ConflictError');
 const User = require('../models/user');
@@ -47,36 +46,35 @@ module.exports.logout = (req, res) => {
 };
 
 module.exports.getUser = (req, res, next) => {
-  const id = req.user._id;
-
-  User.findById(id)
-    .then((user) => res.send(user))
+  User.findById(req.user)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь по указанному _id не найден');
+      }
+      return res.status(200).send({
+        name: user.name,
+        email: user.email,
+      });
+    })
     .catch(next);
 };
 
-module.exports.updateUserProfile = (req, res, next) => { // обновляем данные текущего пользователя
+module.exports.updateUserProfile = (req, res, next) => {
   const { name, email } = req.body;
-  const id = req.user._id;
 
-  User.find({ email })
-    .then((data) => {
-      if (data.length !== 0) { // проверка, что такого имейла нет в базе
-        next(new ConflictError('Пользователь с такой почтой уже существует'));
+  User.findByIdAndUpdate(
+    req.user._id,
+    { name, email },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь по указанному _id не найден');
       }
-
-      User.findByIdAndUpdate(id, { name, email }, {
-        runValidators: true,
-        new: true,
-      })
-        .orFail(new NotFoundError('Ресурс не найден'))
-        .then((user) => res.send(user))
-        .catch((err) => {
-          if (err.name === 'ValidationError') {
-            next(new BadRequestError('Переданы некорректные данные при обновлении пользователя'));
-          } else {
-            next(err);
-          }
-        });
+      return res.status(200).send(user);
     })
     .catch(next);
 };
