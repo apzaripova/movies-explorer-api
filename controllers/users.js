@@ -8,23 +8,27 @@ const User = require('../models/user');
 const { NODE_ENV, JWT_SECRET } = process.env;
 
 module.exports.createUser = (req, res, next) => {
-  const { email, password, name } = req.body;
+  const {
+    name,
+    email,
+    password,
+  } = req.body;
 
-  bcrypt
-    .hash(password, 10)
-    .then((hash) => User.create({ email, name, password: hash }))
-    .then((user) => res.send({
-      _id: user._id,
+  User.findOne({ email })
+    .then((user) => {
+      if (!(user === null)) throw new ConflictError('Пользователь с таким email уже существует');
+    })
+    .then(() => bcrypt.hash(password, 10))
+    .then((hash) => User.create({
+      name,
+      email,
+      password: hash,
+    }))
+    .then((user) => res.status(200).send({
       name: user.name,
       email: user.email,
     }))
-    .catch((err) => {
-      if (err.code === 110000) {
-        next(new ConflictError('Пользователь уже существует'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 module.exports.login = (req, res, next) => {
