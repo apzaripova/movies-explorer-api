@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const BadRequestError = require('../errors/BadRequestError');
-const UnauthorizedError = require('../errors/NotAuthError');
 const NotFoundError = require('../errors/NotFoundError');
 const ConflictError = require('../errors/ConflictError');
 const User = require('../models/user');
+const NotAuthError = require('../errors/NotAuthError');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -31,42 +31,22 @@ module.exports.createUser = (req, res, next) => {
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    throw new BadRequestError('Не передан email или пароль');
-  }
-
-  User.findOne({ email })
-    .select('+password')
+  return User.findUserByCredentials(email, password)
     .then((user) => {
-      if (!user) {
-        throw new UnauthorizedError('Неправильные почта или пароль');
-      }
+      const token = jwt.sign(
+        { _id: user._id },
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret-key',
+      );
 
-      bcrypt
-        .compare(password, user.password)
-        .then((matched) => {
-          if (!matched) {
-            throw new UnauthorizedError('Неправильные почта или пароль');
-          }
-
-          const token = jwt.sign(
-            { _id: user._id },
-            NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret-key',
-            {
-              expiresIn: '7d',
-            },
-          );
-          res
-            .cookie('userToken', token, {
-              maxAge: 360000000,
-              httpOnly: true,
-              sameSite: true,
-            })
-            .send({ _id: user._id });
-        })
-        .catch(next);
+      res.status(200).send({ token });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.statusCode === 401) {
+        next(new NotAuthError(err.message));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.logout = (req, res) => {
