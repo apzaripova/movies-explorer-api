@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { errors } = require('celebrate');
@@ -37,8 +36,6 @@ mongoose.connect('mongodb://localhost:27017/moviesdb', {
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-app.use(helmet());
 
 app.use(requestLogger);
 app.use(rateLimiter);
