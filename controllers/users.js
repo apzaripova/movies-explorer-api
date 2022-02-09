@@ -4,7 +4,6 @@ const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 const ConflictError = require('../errors/ConflictError');
 const User = require('../models/user');
-const NotAuthError = require('../errors/NotAuthError');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -33,20 +32,10 @@ module.exports.login = (req, res, next) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign(
-        { _id: user._id },
-        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret-key',
-      );
-
-      res.status(200).send({ token });
+      const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret-key', { expiresIn: '7d' });
+      return res.send({ token });
     })
-    .catch((err) => {
-      if (err.statusCode === 401) {
-        next(new NotAuthError(err.message));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 module.exports.logout = (req, res) => {
