@@ -11,11 +11,10 @@ Router.post('/signup', validateSignUp, createUser);
 Router.post('/signin', validateSignIn, login);
 
 Router.delete('/signout', auth, logout);
-
 Router.use('/users', auth, usersRouter);
-Router.use('/', auth, moviesRouter);
+Router.use('/movies', auth, moviesRouter);
 
-Router.use('*', (req, res, next) => {
+Router.use((req, res, next) => {
   next(new NotFoundError('Ресурс не найден'));
 });
 

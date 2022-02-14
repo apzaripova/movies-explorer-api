@@ -4,10 +4,10 @@ const NotFoundError = require('../errors/NotFoundError');
 const Movie = require('../models/movie');
 
 exports.getAllMovies = (req, res, next) => {
-  const userId = req.user._id;
-
-  Movie.find({ owner: userId })
-    .then((movies) => res.send(movies))
+  Movie.find({ owner: req.user._id })
+    .then((movies) => {
+      res.send(movies.map((movie) => movie));
+    })
     .catch(next);
 };
 

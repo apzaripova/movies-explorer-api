@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config');
 const NotFoundError = require('../errors/NotFoundError');
 const ConflictError = require('../errors/ConflictError');
+const BadRequestError = require('../errors/BadRequestError');
 const User = require('../models/user');
-
-const { NODE_ENV, JWT_SECRET } = process.env;
 
 module.exports.createUser = (req, res, next) => {
   const {
@@ -13,30 +13,40 @@ module.exports.createUser = (req, res, next) => {
     password,
   } = req.body;
 
-  User.findOne({ email })
-    .then((user) => {
-      if (!(user === null)) throw new ConflictError('Пользователь с таким email уже существует');
-    })
-    .then(() => bcrypt.hash(password, 10))
-    .then((hash) => User.create({
-      name,
-      email,
-      password: hash,
-    }))
-    .then((user) => res.status(200).send({
-      name: user.name,
-      email: user.email,
-    }))
-    .catch(next);
+  if (!password || password.length < 4) {
+    next(new BadRequestError('Пароль отсутствует или короче четырех символов'));
+  }
+
+  // хешируем пароль
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({ email, name, password: hash }))
+    .then((user) => res.send(user.toJSON()))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError(`${Object.values(err.errors).map((error) => error.message).join(', ')}`));
+      } else if (err.name === 'MongoError' && err.code === 11000) {
+        next(new ConflictError('Пользователь с таким email уже существует'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
-  return User.findUserByCredentials(email, password)
+  User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret-key', { expiresIn: '7d' });
-      return res.send({ token });
+      const token = jwt.sign(
+        { _id: user._id },
+        JWT_SECRET,
+        { expiresIn: '7d' },
+      );
+      res.cookie('token', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+      })
+        .send({ token });
     })
     .catch(next);
 };
@@ -46,35 +56,27 @@ module.exports.logout = (req, res) => {
 };
 
 module.exports.getUser = (req, res, next) => {
-  User.findById(req.user)
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Пользователь по указанному _id не найден');
-      }
-      return res.status(200).send({
-        name: user.name,
-        email: user.email,
-      });
-    })
+  User.findById(req.user._id)
+    .orFail(new NotFoundError('Пользователь не найден'))
+    .then((user) => res.send(user))
     .catch(next);
 };
 
 module.exports.updateUserProfile = (req, res, next) => {
-  const { name, email } = req.body;
-
-  User.findByIdAndUpdate(
-    req.user._id,
-    { name, email },
+  User.findByIdAndUpdate(req.user._id,
+    req.body,
     {
       new: true,
       runValidators: true,
-    },
-  )
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Пользователь по указанному _id не найден');
-      }
-      return res.status(200).send(user);
     })
-    .catch(next);
+    .then((user) => res.send(user))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError(`${Object.values(err.errors).map((error) => error.message).join(', ')}`));
+      } else if (err.name === 'MongoError' && err.code === 11000) {
+        next(new ConflictError('Пользователь с таким email уже существует'));
+      } else {
+        next(err);
+      }
+    });
 };
