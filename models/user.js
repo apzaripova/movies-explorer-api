@@ -6,8 +6,10 @@ const NotAuthError = require('../errors/NotAuthError');
 const userSchema = new mongoose.Schema({
   email: {
     type: String,
-    required: [true, 'email обязательно должен быть указан'],
+    required: true,
     unique: true,
+    minlength: 2,
+    maxlength: 300,
     validate: {
       validator: (email) => validator.isEmail(email),
       message: 'Невалидный email',
@@ -15,7 +17,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'пароль обязательно должен быть указан'],
+    required: true,
     minlength: 4,
     select: false,
   },
@@ -27,26 +29,18 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.methods.toJSON = function noShowPassword() {
-  const obj = this.toObject();
-  delete obj.password;
-  return obj;
-};
-
-userSchema.statics.findUserByCredentials = function getUserIfAuth(email, password) {
-  // ищем пользователя по почте
+userSchema.statics.findUserByCredentials = function findUserByCredentials(email, password) {
   return this.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
-        // не нашёлся — отклоняем промис
-        return Promise.reject(new NotAuthError('Неверный логин или пароль'));
+        throw new NotAuthError('Неправильные почта или пароль');
       }
-      // нашёлся — сравниваем хеши
       return bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            return Promise.reject(new NotAuthError('Неверный логин или пароль'));
+            throw new NotAuthError('Неправильные почта или пароль');
           }
+
           return user;
         });
     });

@@ -9,6 +9,7 @@ const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { rateLimiter } = require('./middlewares/rateLimiter');
 const { errorHandler } = require('./middlewares/errorHandler');
 
+const { PORT = 3000 } = process.env;
 const app = express();
 
 const whiteList = ['http://movies-explorer.kinopoisk.nomoredomains.rocks',
@@ -24,8 +25,6 @@ const corsOptions = {
 };
 
 app.use('*', cors(corsOptions));
-
-const { PORT = 3000 } = process.env;
 
 app.use(express.json());
 
