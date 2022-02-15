@@ -35,18 +35,10 @@ module.exports.createUser = (req, res, next) => {
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
-  User.findUserByCredentials(email, password)
+  return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign(
-        { _id: user._id },
-        JWT_SECRET,
-        { expiresIn: '7d' },
-      );
-      res.cookie('token', token, {
-        maxAge: 3600000 * 24 * 7,
-        httpOnly: true,
-      })
-        .send({ token });
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+      return res.send({ token });
     })
     .catch(next);
 };
@@ -56,7 +48,7 @@ module.exports.logout = (req, res) => {
 };
 
 module.exports.getUser = (req, res, next) => {
-  User.findById(req.user._id)
+  User.findById(req.user)
     .orFail(new NotFoundError('Пользователь не найден'))
     .then((user) => res.send(user))
     .catch(next);

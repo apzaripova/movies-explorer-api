@@ -1,24 +1,23 @@
-// код для авторизации запроса
 const jwt = require('jsonwebtoken');
+const NotAuthError = require('../errors/NotAuthError');
 const { JWT_SECRET } = require('../config');
-const AuthError = require('../errors/NotAuthError');
 
-const auth = (req, res, next) => {
-  const { token } = req.cookies;
+module.exports = (req, res, next) => {
+  const { authorization } = req.headers;
 
-  if (!token) {
-    return next(new AuthError('Токен остутствует или некорректен'));
+  if (!authorization || !authorization.startsWith('Bearer ')) {
+    throw new NotAuthError('Необходима авторизация');
   }
 
+  const token = authorization.replace('Bearer ', '');
   let payload;
+
   try {
     payload = jwt.verify(token, JWT_SECRET);
   } catch (err) {
-    next(new AuthError('Токен не верифицирован, авторизация не пройдена'));
+    throw new NotAuthError('Необходима авторизация');
   }
 
   req.user = payload;
   return next();
 };
-
-module.exports = auth;
