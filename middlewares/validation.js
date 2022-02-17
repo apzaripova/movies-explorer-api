@@ -1,11 +1,12 @@
 const { celebrate, Joi } = require('celebrate');
 const { default: validator } = require('validator');
 
-function validateURL(value, helpers) {
-  if (validator.isURL(value)) {
+function validateURL(value) {
+  const result = validator.isURL(value);
+  if (result) {
     return value;
   }
-  return helpers.message('Заполните поле валидным URL');
+  throw new Error('URL validation err');
 }
 
 const validateSignUp = celebrate({
