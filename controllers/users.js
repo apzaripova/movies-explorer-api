@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const { NODE_ENV, JWT_SECRET } = process.env;
+const { JWT_SECRET = 'dev-secret-key' } = process.env;
 
 const NotFoundError = require('../errors/NotFoundError');
 const ConflictError = require('../errors/ConflictError');
@@ -9,25 +9,29 @@ const User = require('../models/user');
 
 module.exports.createUser = (req, res, next) => {
   const {
-    name,
     email,
     password,
+    name,
   } = req.body;
 
-  User.findOne({ email })
-    .then((user) => {
-      if (!(user === null)) throw new ConflictError('Пользователь по указанному email уже существует');
-    })
-    .then(() => bcrypt.hash(password, 10))
+  bcrypt.hash(password, 10)
     .then((hash) => User.create({
-      name,
       email,
       password: hash,
+      name,
     }))
-    .then((user) => res.status(200).send({
-      name: user.name,
+    .then((user) => res.send({
+      _id: user._id,
       email: user.email,
+      name: user.name,
     }))
+    .catch((err) => {
+      if (err.name === 'MongoError' || err.code === 11000) {
+        throw new ConflictError('Пользователь с таким email уже существует');
+      } else {
+        next(err);
+      }
+    })
     .catch(next);
 };
 
@@ -36,8 +40,17 @@ module.exports.login = (req, res, next) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' });
-      return res.send({ token });
+      if (!user) {
+        throw new NotFoundError('Нет пользователя с таким id');
+      }
+      // аутентификация успешна! пользователь в переменной user
+      const token = jwt.sign(
+        { _id: user._id },
+        JWT_SECRET,
+        { expiresIn: '7d' },
+      );
+      // вернём токен
+      res.send({ token });
     })
     .catch(next);
 };
