@@ -1,16 +1,15 @@
-const BadRequestError = require('../errors/BadRequestError');
-const NotFoundError = require('../errors/NotFoundError');
 const Movie = require('../models/movie');
+const BadRequestError = require('../errors/BadRequestError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
-exports.getMovies = (req, res, next) => {
-  const owner = req.user._id;
-  Movie.find({ owner })
-    .populate('owner')
-    .then((movies) => res.status(200).send(movies))
+const getMovies = (req, res, next) => {
+  Movie.find({})
+    .then((movies) => res.status(200).send({ data: movies }))
     .catch(next);
 };
 
-exports.createMovie = (req, res, next) => {
+const createMovie = (req, res, next) => {
+  const owner = req.user._id;
   const {
     country,
     director,
@@ -26,7 +25,7 @@ exports.createMovie = (req, res, next) => {
   } = req.body;
 
   Movie.create({
-    owner: req.user._id,
+    owner,
     country,
     director,
     duration,
@@ -40,20 +39,44 @@ exports.createMovie = (req, res, next) => {
     nameEN,
   })
     .then((movie) => res.status(200).send(movie))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Произошла ошибка валидации данных нового фильма.'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-exports.deleteMovie = (req, res, next) => {
-  Movie.findOne({ movieId: req.params.movieId })
+const deleteMovie = (req, res, next) => {
+  const { movieId } = req.params;
+  const me = req.user._id;
+
+  Movie.findById(movieId)
     .then((movie) => {
       if (!movie) {
-        throw new NotFoundError('Фильм с указанным _id не найден');
+        throw new BadRequestError('Нет фильма с таким id.');
       }
-      if (String(movie.owner) !== req.user._id) {
-        throw new BadRequestError('Вы не можете удалить чужой фильм');
+      if (me.toString() !== movie.owner.toString()) {
+        throw new ForbiddenError('вы не можете удалить этот фильм.');
       }
-      return Movie.findOneAndDelete({ movieId: req.params.movieId })
-        .then((userMovie) => res.status(200).send(userMovie));
+      Movie.deleteOne({ _id: movie._id })
+        .then((deleteInfo) => {
+          res.status(200).send({ deleteInfo });
+        })
+        .catch(next);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Нет фильма с таким id.'));
+      } else {
+        next(err);
+      }
+    });
+};
+
+module.exports = {
+  getMovies,
+  createMovie,
+  deleteMovie,
 };
