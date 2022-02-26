@@ -50,14 +50,14 @@ const createMovie = (req, res, next) => {
 
 const deleteMovie = (req, res, next) => {
   const { movieId } = req.params;
-  const me = req.user._id;
+  const currentUser = req.user.id;
 
   Movie.findById(movieId)
     .then((movie) => {
       if (!movie) {
         throw new BadRequestError('Нет фильма с таким id.');
       }
-      if (me.toString() !== movie.owner.toString()) {
+      if (currentUser.toString() !== movie.owner.toString()) {
         throw new ForbiddenError('вы не можете удалить этот фильм.');
       }
       Movie.deleteOne({ _id: movie._id })

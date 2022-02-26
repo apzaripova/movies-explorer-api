@@ -1,95 +1,81 @@
-require('dotenv').config();
-
-const { JWT_SECRET } = process.env;
-
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
 const User = require('../models/user');
 const NotFoundError = require('../errors/NotFoundError');
 const BadRequestError = require('../errors/BadRequestError');
+const NotAuthError = require('../errors/NotAuthError');
 
-const getProfile = (req, res, next) => {
-  User.findById(req.user._id)
+const { NODE_ENV, JWT_SECRET } = process.env;
+
+const getCurrentUser = (req, res, next) => {
+  User.findById(req.user._id, { __v: 0 })
     .then((user) => {
-      if (user) {
-        res.status(200).send({ data: user });
-      } else {
-        throw new NotFoundError('Пользователь не найден.');
+      if (!user) {
+        throw new NotFoundError('Ресурс не найден');
       }
+      res.status(200).send(user);
     })
     .catch(next);
 };
 
 const updateUserProfile = (req, res, next) => {
-  const { name, email } = req.body;
-
   User.findByIdAndUpdate(
-    req.user._id,
-    { name, email },
+    req.user.id,
     {
-      new: true,
-      runValidators: true,
+      name: req.body.name,
+      email: req.body.email,
+    },
+    {
+      new: true, // обработчик then получит на вход обновлённую запись
+      runValidators: true, // данные будут валидированы перед изменением
     },
   )
     .then((user) => {
       if (!user) {
-        throw new NotFoundError('Пользователь по указанному _id не найден');
+        throw new NotFoundError('Произошла ошибка, не удалось найти пользователей');
       }
-      return res.status(200).send(user);
+      res.status(200).send({ data: user });
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Произошла ошибка валидации данных пользователя.'));
-      } else {
-        next(err);
-      }
-    });
+    .catch((err) => next(err));
 };
 
 const createUser = (req, res, next) => {
   const { email, password, name } = req.body;
-  const trimmedPassword = String(password).trim();
-  const trimmedEmail = String(email).trim();
-  if (trimmedPassword.length < 8) {
-    throw new BadRequestError('Пароль должен содержать не менее восьми символов.');
-  }
-  bcrypt
-    .hash(trimmedPassword, 10)
-    .then((hash) => User.create({
-      email: trimmedEmail,
-      password: hash,
-      name,
-    }))
-    .then((user) => {
-      res.status(201).send({ data: { _id: user._id, email: user.email } });
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Произошла ошибка валидации данных нового пользователя.'));
-      } else if (err.name === 'MongoError' && err.code === 11000) {
-        next(new BadRequestError('Такой пользователь уже существует'));
-      } else {
-        next(err);
-      }
-    });
-};
 
-const login = (req, res, next) => {
-  const { email, password } = req.body;
-  const trimmedPassword = String(password).trim();
-  const trimmedEmail = String(email).trim();
-  User.findUserByCredentials(trimmedEmail, trimmedPassword)
+  User.findOne({ email })
     .then((user) => {
-      const token = jwt.sign(
-        { _id: user._id }, JWT_SECRET, { expiresIn: '7d' },
-      );
-      res.send({ token });
+      if (user) {
+        throw new BadRequestError('Такой email уже существует');
+      }
+      return bcrypt.hash(password, 10);
+    })
+    .then((hash) => {
+      User.create({ email, password: hash, name })
+        .then(() => {
+          res.send({ email, name });
+        });
     })
     .catch(next);
 };
 
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign(
+        { _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' },
+      );
+      res.status(200).send({ token, name: user.name, email: user.email });
+    })
+    .catch(() => {
+      next(new NotAuthError('Ошибка авторизации'));
+    });
+};
+
 module.exports = {
-  getProfile,
+  getCurrentUser,
   updateUserProfile,
   createUser,
   login,
