@@ -33,7 +33,7 @@ const corsOptions = {
 
 app.use('*', cors(corsOptions));
 
-const { PORT = 3000 } = process.env;
+const { PORT = 3001 } = process.env;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
