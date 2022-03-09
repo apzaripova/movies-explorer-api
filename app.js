@@ -9,7 +9,6 @@ const Router = require('./routes/index');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { rateLimiter } = require('./middlewares/rateLimiter');
-const NotFoundError = require('./errors/NotFoundError');
 
 const app = express();
 
@@ -33,7 +32,7 @@ const corsOptions = {
 
 app.use('*', cors(corsOptions));
 
-const { PORT = 3001 } = process.env;
+const { PORT = 3000 } = process.env;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -58,17 +57,9 @@ app.get('/crash-test', () => {
 
 app.use(Router);
 
-// обработчики ошибок
-app.all('*', () => {
-  throw new NotFoundError('На сервере произошла ошибка');
-});
-
 app.use(errorLogger);
 
 app.use(errors());
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Сервер запущен на порту ${PORT}`);
-});
+app.listen(PORT);
