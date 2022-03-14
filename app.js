@@ -1,6 +1,6 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+require('dotenv').config();
 const helmet = require('helmet');
 const cors = require('cors');
 const { errors } = require('celebrate');
@@ -11,23 +11,8 @@ const { rateLimiter } = require('./middlewares/rateLimiter');
 const config = require('./config');
 
 const { dbSrc, NODE_ENV } = process.env;
-const { PORT = 3000 } = process.env;
+
 const app = express();
-
-const options = {
-  origin: [
-    'http://localhost:3000',
-    'http://movies-explorer.kinopoisk.nomoredomains.rocks',
-    'https://movies-explorer.kinopoisk.nomoredomains.rocks',
-  ],
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  allowedHeaders: ['Content-Type', 'origin', 'Authorization'],
-  credentials: true,
-};
-
-app.use('*', cors(options));
 
 mongoose.connect(NODE_ENV === 'production' ? dbSrc : config.mongodb, {
   useNewUrlParser: true,
@@ -35,6 +20,22 @@ mongoose.connect(NODE_ENV === 'production' ? dbSrc : config.mongodb, {
   useFindAndModify: false,
   useUnifiedTopology: true,
 });
+
+const whiteList = ['http://movies-explorer.kinopoisk.nomoredomains.rocks',
+  'https://movies-explorer.kinopoisk.nomoredomains.rocks'];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (whiteList.indexOf(origin) !== -1) {
+      callback(null, true);
+    }
+  },
+  credentials: true,
+};
+
+app.use('*', cors(corsOptions));
+
+const { PORT = 3000 } = process.env;
 
 app.use('/', express.json());
 
