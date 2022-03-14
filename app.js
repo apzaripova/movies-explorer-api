@@ -9,14 +9,15 @@ const Router = require('./routes/index');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { rateLimiter } = require('./middlewares/rateLimiter');
+const { PORT, DB_ADDRESS } = require('./config');
 
-const { PORT = 3000 } = process.env;
 const app = express();
 
-mongoose.connect('mongodb://localhost:27017/moviesdb', {
+mongoose.connect(DB_ADDRESS, {
   useNewUrlParser: true,
   useCreateIndex: true,
   useFindAndModify: false,
+  useUnifiedTopology: true,
 });
 
 const whiteList = ['https://movies-explorer.kinopoisk.nomoredomains.rocks',
@@ -61,5 +62,4 @@ app.use(errorLogger);
 app.use(errors());
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-});
+app.listen(PORT);
