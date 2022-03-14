@@ -40,7 +40,7 @@ const updateUserProfile = (req, res, next) => {
     .catch((err) => next(err));
 };
 
-const createUser = (req, res, next) => {
+const register = (req, res, next) => {
   const { email, password, name } = req.body;
 
   User.findOne({ email })
@@ -77,6 +77,6 @@ const login = (req, res, next) => {
 module.exports = {
   getCurrentUser,
   updateUserProfile,
-  createUser,
+  register,
   login,
 };

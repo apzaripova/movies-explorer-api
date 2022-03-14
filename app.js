@@ -12,13 +12,6 @@ const { PORT, DB_ADDRESS } = require('./config');
 
 const app = express();
 
-mongoose.connect(DB_ADDRESS, {
-  useNewUrlParser: true,
-  useCreateIndex: true,
-  useFindAndModify: false,
-  useUnifiedTopology: true,
-});
-
 const whiteList = ['https://movies-explorer.kinopoisk.nomoredomains.rocks',
   'http://movies-explorer.kinopoisk.nomoredomains.rocks'];
 
@@ -33,6 +26,15 @@ const corsOptions = {
 
 app.use('*', cors(corsOptions));
 
+mongoose.connect(DB_ADDRESS, {
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useFindAndModify: false,
+  useUnifiedTopology: true,
+});
+
+app.use('/', express.json());
+
 app.use(requestLogger);
 
 app.use(helmet());
@@ -46,11 +48,12 @@ app.get('/crash-test', () => {
   }, 0);
 });
 
-app.use(Router);
+app.use('/', Router);
 
 app.use(errorLogger);
 
 app.use(errors());
+
 app.use(errorHandler);
 
 app.listen(PORT);
