@@ -8,17 +8,28 @@ const Router = require('./routes/index');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { rateLimiter } = require('./middlewares/rateLimiter');
-const { PORT, DB_ADDRESS } = require('./config');
+const config = require('./config');
 
+const { dbSrc, NODE_ENV } = process.env;
+const { PORT = 3000 } = process.env;
 const app = express();
 
-const whiteList = ['https://movies-explorer.kinopoisk.nomoredomains.rocks',
-  'http://movies-explorer.kinopoisk.nomoredomains.rocks'];
+const options = {
+  origin: [
+    'http://localhost:3000',
+    'http://movies-explorer.kinopoisk.nomoredomains.rocks',
+    'https://movies-explorer.kinopoisk.nomoredomains.rocks',
+  ],
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  allowedHeaders: ['Content-Type', 'origin', 'Authorization'],
+  credentials: true,
+};
 
-app.use(cors());
-app.options('*', cors());
+app.use('*', cors(options));
 
-mongoose.connect(DB_ADDRESS, {
+mongoose.connect(NODE_ENV === 'production' ? dbSrc : config.mongodb, {
   useNewUrlParser: true,
   useCreateIndex: true,
   useFindAndModify: false,
