@@ -15,16 +15,8 @@ const app = express();
 const whiteList = ['https://movies-explorer.kinopoisk.nomoredomains.rocks',
   'http://movies-explorer.kinopoisk.nomoredomains.rocks'];
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (whiteList.indexOf(origin) !== -1) {
-      callback(null, true);
-    }
-  },
-  credentials: true,
-};
-
-app.use('*', cors(corsOptions));
+app.use(cors());
+app.options('*', cors());
 
 mongoose.connect(DB_ADDRESS, {
   useNewUrlParser: true,
