@@ -1,9 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const cors = require('cors');
 const helmet = require('helmet');
+const cors = require('cors');
 const { errors } = require('celebrate');
 const Router = require('./routes/index');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
@@ -34,19 +33,11 @@ const corsOptions = {
 
 app.use('*', cors(corsOptions));
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(requestLogger);
 
 app.use(helmet());
 
-app.use(cors({
-  origin: '*',
-  credentials: true,
-}));
-
 app.use(rateLimiter);
-
-app.use(requestLogger);
 
 // подключаем краш-тест сервера
 app.get('/crash-test', () => {
