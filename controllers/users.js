@@ -21,23 +21,17 @@ const getCurrentUser = (req, res, next) => {
 
 const updateUserProfile = (req, res, next) => {
   User.findByIdAndUpdate(
-    req.user.id,
+    req.user._id,
+    req.body,
     {
-      name: req.body.name,
-      email: req.body.email,
-    },
-    {
-      new: true, // обработчик then получит на вход обновлённую запись
-      runValidators: true, // данные будут валидированы перед изменением
+      new: true,
+      runValidators: true,
+      omitUndefined: true,
     },
   )
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Произошла ошибка, не удалось найти пользователей');
-      }
-      res.status(200).send({ data: user });
-    })
-    .catch((err) => next(err));
+    .orFail(new NotFoundError('Данный пользователь отсутствует'))
+    .then((user) => res.send(user))
+    .catch(next);
 };
 
 const register = (req, res, next) => {
