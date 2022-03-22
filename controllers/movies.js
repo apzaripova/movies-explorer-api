@@ -4,7 +4,10 @@ const ForbiddenError = require('../errors/ForbiddenError');
 
 const getMovies = (req, res, next) => {
   Movie.find({})
-    .then((movies) => res.status(200).send({ data: movies }))
+    .populate('owner')
+    .then((movies) => {
+      res.send(movies);
+    })
     .catch(next);
 };
 
