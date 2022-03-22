@@ -9,7 +9,6 @@ const getMovies = (req, res, next) => {
 };
 
 const createMovie = (req, res, next) => {
-  const owner = req.user._id;
   const {
     country,
     director,
@@ -23,9 +22,7 @@ const createMovie = (req, res, next) => {
     nameRU,
     nameEN,
   } = req.body;
-
   Movie.create({
-    owner,
     country,
     director,
     duration,
@@ -34,18 +31,21 @@ const createMovie = (req, res, next) => {
     image,
     trailer,
     thumbnail,
+    owner: req.user._id,
     movieId,
     nameRU,
     nameEN,
   })
-    .then((movie) => res.status(200).send(movie))
+    .then((movie) => {
+      res.send({ movie });
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError('Произошла ошибка валидации данных нового фильма.'));
-      } else {
-        next(err);
+        throw new BadRequestError('Ошибка валидации');
       }
-    });
+      next(err);
+    })
+    .catch(next);
 };
 
 const deleteMovie = (req, res, next) => {
