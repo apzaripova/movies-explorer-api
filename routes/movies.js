@@ -31,8 +31,8 @@ moviesRouter.post('/movies', celebrate({
       return helpers.message('Поле image заполнено некорректно');
     }),
     movieId: Joi.number().required(),
-    nameRU: Joi.string().required().min(2).max(30),
-    nameEN: Joi.string().required().min(2).max(30),
+    nameRU: Joi.string().required(),
+    nameEN: Joi.string().required(),
   }),
 }),
 createMovie);
