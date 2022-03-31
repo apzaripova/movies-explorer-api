@@ -1,80 +1,90 @@
 const mongoose = require('mongoose');
-const validator = require('validator');
+const isURL = require('validator/lib/isURL');
 
-const movieSchema = new mongoose.Schema({
-  country: {
-    type: String,
-    required: true,
-    minlength: 2,
-    maxlength: 30,
-  },
-  director: {
-    type: String,
-    required: true,
-    minlength: 2,
-    maxlength: 30,
-  },
-  duration: {
-    type: Number,
-    required: true,
-  },
-  year: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  image: {
-    type: String,
-    required: true,
-    validate: {
-      validator: (v) => validator.isEmail(v),
-      message: 'Неверный формат ссылки на картинку',
+const movieSchema = new mongoose.Schema(
+  {
+    country: {
+      type: String,
+      minlength: 2,
+      maxlength: 30,
+      required: true,
+    },
+    director: {
+      type: String,
+      minlength: 2,
+      maxlength: 30,
+      required: true,
+    },
+    duration: {
+      type: Number,
+      min: 0,
+      max: 300,
+      required: true,
+    },
+    year: {
+      type: String,
+      length: 4,
+      required: true,
+    },
+    description: {
+      type: String,
+      minlength: 1,
+      maxlength: 2000,
+      required: true,
+    },
+    image: {
+      type: String,
+      lowercase: true,
+      required: true,
+      validate: {
+        validator(v) {
+          return isURL(v);
+        },
+      },
+    },
+    trailer: {
+      type: String,
+      lowercase: true,
+      required: true,
+      validate: {
+        validator(v) {
+          return isURL(v);
+        },
+      },
+    },
+    thumbnail: {
+      type: String,
+      lowercase: true,
+      required: true,
+      validate: {
+        validator(v) {
+          return isURL(v);
+        },
+      },
+    },
+    owner: {
+      type: mongoose.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    },
+    movieId: {
+      type: Number,
+      required: true,
+    },
+    nameRU: {
+      type: String,
+      minlength: 2,
+      maxlength: 30,
+      required: true,
+    },
+    nameEN: {
+      type: String,
+      minlength: 2,
+      maxlength: 30,
+      required: true,
     },
   },
-  trailer: {
-    type: String,
-    required: true,
-    validate: {
-      validator: (v) => validator.isEmail(v),
-      message: 'Неверный формат ссылки на картинку',
-    },
-  },
-  thumbnail: {
-    type: String,
-    required: true,
-    validate: {
-      validator: (v) => validator.isEmail(v),
-      message: 'Неверный формат ссылки на картинку',
-    },
-  },
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'user',
-    required: true,
-  },
-  movieId: {
-    type: Number,
-    required: true,
-  },
-  nameRU: {
-    type: String,
-    required: true,
-    minlength: 2,
-    maxlength: 30,
-  },
-  nameEN: {
-    type: String,
-    required: true,
-    minlength: 2,
-    maxlength: 30,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  { versionKey: false },
+);
 
 module.exports = mongoose.model('movie', movieSchema);

@@ -9,9 +9,9 @@ moviesRouter.post('/movies', celebrate({
   body: Joi.object().keys({
     country: Joi.string().required().min(2).max(30),
     director: Joi.string().required().min(2).max(30),
-    duration: Joi.number().required(),
+    duration: Joi.number().required().min(2).max(300),
     year: Joi.string().required().length(4),
-    description: Joi.string().required(),
+    description: Joi.string().required().min(2).max(2000),
     image: Joi.string().required().custom((value, helpers) => {
       if (validator.isURL(value)) {
         return value;
@@ -37,9 +37,9 @@ moviesRouter.post('/movies', celebrate({
 }),
 createMovie);
 
-moviesRouter.delete('/movies/:movieId', celebrate({
+moviesRouter.delete('/movies/:id', celebrate({
   params: Joi.object().keys({
-    movieId: Joi.string().length(24).hex().required(),
+    id: Joi.string().length(24).hex().required(),
   }),
 }),
 deleteMovie);
