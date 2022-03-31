@@ -44,7 +44,6 @@ const createMovie = (req, res, next) => {
       if (err.name === 'ValidationError') {
         throw new BadRequestError('Ошибка валидации');
       }
-      next(err);
     })
     .catch(next);
 };
