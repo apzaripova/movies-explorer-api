@@ -1,10 +1,11 @@
 const Movie = require('../models/movie');
 const BadRequestError = require('../errors/BadRequestError');
 const ForbiddenError = require('../errors/ForbiddenError');
+const NotFoundError = require('../errors/NotFoundError');
 
 const getMovies = (req, res, next) => {
   Movie.find({})
-    .then((movie) => res.status(200).send(movie.sort((a, b) => b.createdAt - a.createdAt)))
+    .then((movies) => res.send(movies))
     .catch(next);
 };
 
@@ -23,6 +24,7 @@ const createMovie = (req, res, next) => {
     nameEN,
   } = req.body;
   const owner = req.user._id;
+
   Movie.create({
     country,
     director,
@@ -37,9 +39,7 @@ const createMovie = (req, res, next) => {
     nameEN,
     owner,
   })
-    .then((movie) => {
-      res.send(movie);
-    })
+    .then((movie) => res.send(movie))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         throw new BadRequestError('Ошибка валидации');
@@ -50,30 +50,25 @@ const createMovie = (req, res, next) => {
 };
 
 const deleteMovie = (req, res, next) => {
-  const { movieId } = req.params;
-  const currentUser = req.user.id;
-
-  Movie.findById(movieId)
+  Movie.findByIdAndRemove(req.params.id)
+    .orFail(new NotFoundError('Фильм не найден.'))
     .then((movie) => {
-      if (!movie) {
-        throw new BadRequestError('Нет фильма с таким id.');
+      if (movie) {
+        return res.send({ message: 'Фильм успешно удален.' });
       }
-      if (currentUser.toString() !== movie.owner.toString()) {
-        throw new ForbiddenError('вы не можете удалить этот фильм.');
+      if (!movie.owner.equals(req.user._id)) {
+        throw new ForbiddenError('К сожалению, вы не можете удалять фильмы, созданные другими пользователями.');
       }
-      Movie.deleteOne({ _id: movie._id })
-        .then((deleteInfo) => {
-          res.status(200).send({ deleteInfo });
-        })
-        .catch(next);
+      return movie;
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequestError('Нет фильма с таким id.'));
+        throw new BadRequestError('Фильм не найден и не может быть удален.');
       } else {
-        next(err);
+        throw err;
       }
-    });
+    })
+    .catch(next);
 };
 
 module.exports = {
