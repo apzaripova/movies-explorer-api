@@ -4,10 +4,7 @@ const ForbiddenError = require('../errors/ForbiddenError');
 
 const getMovies = (req, res, next) => {
   Movie.find({})
-    .populate('owner')
-    .then((movies) => {
-      res.send(movies);
-    })
+    .then((movie) => res.status(200).send(movie.sort((a, b) => b.createdAt - a.createdAt)))
     .catch(next);
 };
 
@@ -25,6 +22,7 @@ const createMovie = (req, res, next) => {
     nameRU,
     nameEN,
   } = req.body;
+  const owner = req.user._id;
   Movie.create({
     country,
     director,
@@ -34,13 +32,13 @@ const createMovie = (req, res, next) => {
     image,
     trailer,
     thumbnail,
-    owner: req.user._id,
     movieId,
     nameRU,
     nameEN,
+    owner,
   })
     .then((movie) => {
-      res.send({ movie });
+      res.send(movie);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
