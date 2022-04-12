@@ -1,25 +1,32 @@
 const Router = require('express').Router();
-
+const { celebrate, Joi } = require('celebrate');
+const { register, login } = require('../controllers/users');
+const auth = require('../middlewares/auth');
 const usersRouter = require('./users');
 const moviesRouter = require('./movies');
-
 const NotFoundError = require('../errors/NotFoundError');
 
-const { createUser, login, logout } = require('../controllers/users');
-const { validateSignUp, validateSignIn } = require('../middlewares/validation');
-const auth = require('../middlewares/auth');
+Router.post('/signin', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
+}), login);
 
-Router.post('/signup', auth, validateSignUp, createUser);
+Router.post('/signup', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+    name: Joi.string().min(2).max(30).required(),
+  }),
+}), register);
 
-Router.post('/signin', auth, validateSignIn, login);
+Router.use(auth, usersRouter);
+Router.use(auth, moviesRouter);
 
-Router.delete('/signout', auth, logout);
-
-Router.use('/users', auth, usersRouter);
-Router.use('/movies', auth, moviesRouter);
-
-Router.use('*', (req, res, next) => {
-  next(new NotFoundError('Ресурс не найден'));
+// обработчики ошибок
+Router.all('*', () => {
+  throw new NotFoundError('На сервере произошла ошибка');
 });
 
 module.exports = Router;

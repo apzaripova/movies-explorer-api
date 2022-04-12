@@ -1,8 +1,14 @@
 const usersRouter = require('express').Router();
-const { getUser, updateUserProfile } = require('../controllers/users');
-const { validateUpdateUserProfile } = require('../middlewares/validation');
+const { celebrate, Joi } = require('celebrate');
+const { getCurrentUser, updateUserProfile } = require('../controllers/users');
 
-usersRouter.get('/me', getUser);
-usersRouter.patch('/me', validateUpdateUserProfile, updateUserProfile);
+usersRouter.get('/users/me', getCurrentUser);
+
+usersRouter.patch('/users/me', celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().required().min(2).max(30),
+    email: Joi.string().required().email(),
+  }),
+}), updateUserProfile);
 
 module.exports = usersRouter;
