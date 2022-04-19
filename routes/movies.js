@@ -7,8 +7,8 @@ moviesRouter.get('/movies', getMovies);
 
 moviesRouter.post('/movies', celebrate({
   body: Joi.object().keys({
-    country: Joi.string().required().min(2).max(30),
-    director: Joi.string().required().min(2).max(30),
+    country: Joi.string().required().min(2).max(100),
+    director: Joi.string().required().min(2).max(150),
     duration: Joi.number().required().min(2).max(300),
     year: Joi.string().required().length(4),
     description: Joi.string().required().min(2).max(2000),

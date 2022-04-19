@@ -6,13 +6,13 @@ const movieSchema = new mongoose.Schema(
     country: {
       type: String,
       minlength: 2,
-      maxlength: 30,
+      maxlength: 100,
       required: true,
     },
     director: {
       type: String,
       minlength: 2,
-      maxlength: 30,
+      maxlength: 150,
       required: true,
     },
     duration: {
@@ -34,7 +34,6 @@ const movieSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      lowercase: true,
       required: true,
       validate: {
         validator(v) {
@@ -44,7 +43,6 @@ const movieSchema = new mongoose.Schema(
     },
     trailer: {
       type: String,
-      lowercase: true,
       required: true,
       validate: {
         validator(v) {
@@ -54,7 +52,6 @@ const movieSchema = new mongoose.Schema(
     },
     thumbnail: {
       type: String,
-      lowercase: true,
       required: true,
       validate: {
         validator(v) {
